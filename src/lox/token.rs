@@ -70,11 +70,12 @@ pub enum TokenType {
     TRUE,
     VAR,
     WHILE,
+    EOF,
 }
 
 #[derive(Debug)]
 pub enum Literal {
     NONE,
     STRING(String),
-    INT(i64),
+    NUMBER(f64),
 }

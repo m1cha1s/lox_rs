@@ -1,3 +1,4 @@
+use core::num;
 use std::collections::LinkedList;
 
 use super::{
@@ -85,13 +86,117 @@ impl Scanner {
 
             '\n' => self.line += 1,
 
+            '"' => self.string()?,
+
             _ => {
-                return Err(ParsingError::new(
-                    self.line,
-                    "Unexpected character.".to_string(),
-                ))
+                if self.is_digit(c) {
+                    self.number();
+                } else if self.is_alpha(c) {
+                    self.identifier();
+                } else {
+                    return Err(ParsingError::new(
+                        self.line,
+                        "Unexpected character.".to_string(),
+                    ));
+                }
             }
         };
+        Ok(())
+    }
+
+    fn identifier(&mut self) {
+        while self.is_alpha(self.peek()) || self.is_digit(self.peek()) {
+            self.advance();
+        }
+
+        let text = self
+            .source
+            .as_str()
+            .get((self.start as usize)..(self.current as usize))
+            .unwrap();
+
+        let tok_type = match text {
+            "and" => TokenType::AND,
+            "class" => TokenType::CLASS,
+            "else" => TokenType::ELSE,
+            "false" => TokenType::FALSE,
+            "for" => TokenType::FOR,
+            "fun" => TokenType::FUN,
+            "if" => TokenType::IF,
+            "nil" => TokenType::NIL,
+            "or" => TokenType::OR,
+            "print" => TokenType::PRINT,
+            "return" => TokenType::RETURN,
+            "super" => TokenType::SUPER,
+            "this" => TokenType::THIS,
+            "true" => TokenType::TRUE,
+            "var" => TokenType::VAR,
+            "while" => TokenType::WHILE,
+            _ => TokenType::IDENTIFIER,
+        };
+
+        self.add_token(tok_type, Literal::NONE);
+    }
+
+    fn number(&mut self) {
+        while self.is_digit(self.peek()) {
+            self.advance();
+        }
+
+        if self.peek() == '.' && self.is_digit(self.peek_next()) {
+            self.advance();
+
+            while self.is_digit(self.peek()) {
+                self.advance();
+            }
+        }
+
+        let number_str = self
+            .source
+            .as_str()
+            .get((self.start as usize)..(self.current as usize))
+            .unwrap();
+
+        self.add_token(
+            TokenType::NUMBER,
+            Literal::NUMBER(number_str.parse().unwrap()),
+        );
+    }
+
+    fn is_alpha(&self, c: char) -> bool {
+        (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'
+    }
+
+    fn is_digit(&self, c: char) -> bool {
+        c >= '0' && c <= '9'
+    }
+
+    fn string(&mut self) -> Result<(), ParsingError> {
+        while self.peek() != '"' && !self.is_at_end() {
+            if self.peek() == '\n' {
+                self.line += 1;
+            }
+            self.advance();
+        }
+
+        if self.is_at_end() {
+            return Err(ParsingError::new(
+                self.line,
+                "Unterminated string.".to_string(),
+            ));
+        }
+
+        self.advance();
+
+        let val = self
+            .source
+            .as_str()
+            .get(((self.start + 1) as usize)..((self.current - 1) as usize))
+            .unwrap()
+            .to_string();
+
+        self.add_token(TokenType::STRING, Literal::STRING(val));
+
         Ok(())
     }
 
@@ -100,6 +205,16 @@ impl Scanner {
             return '\0';
         }
         self.source.chars().nth(self.current as usize).unwrap()
+    }
+
+    fn peek_next(&self) -> char {
+        if self.current + 1 >= self.source.len() as u64 {
+            return '\0';
+        }
+        self.source
+            .chars()
+            .nth((self.current + 1) as usize)
+            .unwrap()
     }
 
     fn match_next(&mut self, expected: char) -> bool {
