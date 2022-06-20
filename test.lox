@@ -1,1 +1,3 @@
-Hello world
+var test = "Hello world";
+"
+print(test)

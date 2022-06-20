@@ -1,4 +1,3 @@
-use core::num;
 use std::collections::LinkedList;
 
 use super::{
@@ -26,6 +25,18 @@ impl Scanner {
     }
 
     pub fn scan_tokens(&mut self) -> Result<&LinkedList<Token>, ParsingError> {
+        while !self.is_at_end() {
+            self.start = self.current;
+            self.scan_token()?;
+        }
+
+        self.tokens.push_back(Token::new(
+            TokenType::EOF,
+            "".to_string(),
+            Literal::NONE,
+            self.line,
+        ));
+
         Ok(&self.tokens)
     }
 

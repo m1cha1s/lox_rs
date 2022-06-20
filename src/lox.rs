@@ -1,9 +1,7 @@
-use std::collections::LinkedList;
 use std::fs::File;
 use std::io::prelude::*;
 
 use self::scanner::Scanner;
-use self::token::Token;
 
 mod error;
 mod scanner;
@@ -22,7 +20,7 @@ impl Lox {
 
         file.read_to_string(&mut contents).unwrap();
 
-        println!("{}", contents);
+        self.run(contents);
 
         self
     }
@@ -32,12 +30,8 @@ impl Lox {
         let tokens = scanner.scan_tokens();
 
         match tokens {
-            Ok(tokens) => {
-                for token in tokens {
-                    println!("{:?}", token);
-                }
-            }
-            Err(error) => println!("Error: {:?}", error),
+            Ok(tokens) => println!("{:?}", tokens),
+            Err(error) => println!("Error at line {}. {}", error.line, error.message),
         }
 
         self

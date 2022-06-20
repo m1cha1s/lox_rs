@@ -30,6 +30,7 @@ impl Token {
     }
 }
 
+#[allow(dead_code, non_camel_case_types)]
 #[derive(Debug)]
 pub enum TokenType {
     LEFT_PAREN,
